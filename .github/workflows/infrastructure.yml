@@ -16,13 +16,18 @@ on:
 env:
   TF_VERSION: "1.5.0"
   TF_WORKING_DIR: "./terraform"
+  # Agregar estas variables para que Terraform use Service Principal
+  ARM_CLIENT_ID: ${{ fromJSON(secrets.AZURE_CREDENTIALS).clientId }}
+  ARM_CLIENT_SECRET: ${{ fromJSON(secrets.AZURE_CREDENTIALS).clientSecret }}
+  ARM_SUBSCRIPTION_ID: ${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}
+  ARM_TENANT_ID: ${{ fromJSON(secrets.AZURE_CREDENTIALS).tenantId }}
 
 jobs:
   terraform:
     name: "Terraform"
     runs-on: ubuntu-latest
+    environment: production  # ← AGREGAR ESTO TAMBIÉN
 
-    # Set outputs for other workflows to use
     outputs:
       acr_name: ${{ steps.terraform_output.outputs.acr_name }}
       acr_login_server: ${{ steps.terraform_output.outputs.acr_login_server }}
@@ -49,10 +54,11 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
           terraform_wrapper: false
 
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      # Ya no necesitas Azure Login para Terraform, solo para Azure CLI commands
+      # - name: Azure Login
+      #   uses: azure/login@v1
+      #   with:
+      #     creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Terraform Format Check
         id: fmt
