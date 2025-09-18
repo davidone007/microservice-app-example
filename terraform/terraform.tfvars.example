@@ -1,0 +1,14 @@
+# Copy this file to terraform.tfvars and customize as needed
+
+environment         = "dev"
+location           = "East US"
+resource_group_name = "rg-microservice-todo"
+app_name           = "microservice-todo"
+acr_sku            = "Standard"
+app_service_plan_sku = "B1"
+redis_sku          = "Basic"
+redis_family       = "C"
+redis_capacity     = 0
+
+# Security: Replace with your actual allowed IPs in production
+allowed_ips = ["0.0.0.0/0"]
