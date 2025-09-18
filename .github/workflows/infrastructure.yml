@@ -1,0 +1,155 @@
+name: "Deploy Infrastructure"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "terraform/**"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "terraform/**"
+  workflow_dispatch:
+
+env:
+  TF_VERSION: "1.5.0"
+  TF_WORKING_DIR: "./terraform"
+
+jobs:
+  terraform:
+    name: "Terraform"
+    runs-on: ubuntu-latest
+    environment: production
+
+    # Set outputs for other workflows to use
+    outputs:
+      acr_name: ${{ steps.terraform_output.outputs.acr_name }}
+      acr_login_server: ${{ steps.terraform_output.outputs.acr_login_server }}
+      resource_group_name: ${{ steps.terraform_output.outputs.resource_group_name }}
+      auth_api_name: ${{ steps.terraform_output.outputs.auth_api_name }}
+      users_api_name: ${{ steps.terraform_output.outputs.users_api_name }}
+      todos_api_name: ${{ steps.terraform_output.outputs.todos_api_name }}
+      log_processor_name: ${{ steps.terraform_output.outputs.log_processor_name }}
+      frontend_name: ${{ steps.terraform_output.outputs.frontend_name }}
+      frontend_url: ${{ steps.terraform_output.outputs.frontend_url }}
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check
+        continue-on-error: true
+
+      - name: Terraform Init
+        id: init
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ secrets.TERRAFORM_STATE_RG }}" \
+            -backend-config="storage_account_name=${{ secrets.TERRAFORM_STATE_STORAGE }}" \
+            -backend-config="container_name=${{ secrets.TERRAFORM_STATE_CONTAINER }}" \
+            -backend-config="key=microservice-todo.tfstate"
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        if: github.event_name == 'pull_request'
+        run: terraform plan -no-color -input=false
+        continue-on-error: true
+
+      - name: Update Pull Request
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>
+
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve -input=false
+
+      - name: Export Terraform Outputs
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        id: terraform_output
+        run: |
+          echo "acr_name=$(terraform output -raw acr_name)" >> $GITHUB_OUTPUT
+          echo "acr_login_server=$(terraform output -raw acr_login_server)" >> $GITHUB_OUTPUT
+          echo "resource_group_name=$(terraform output -raw resource_group_name)" >> $GITHUB_OUTPUT
+          echo "auth_api_name=$(terraform output -raw auth_api_name)" >> $GITHUB_OUTPUT
+          echo "users_api_name=$(terraform output -raw users_api_name)" >> $GITHUB_OUTPUT
+          echo "todos_api_name=$(terraform output -raw todos_api_name)" >> $GITHUB_OUTPUT
+          echo "log_processor_name=$(terraform output -raw log_processor_name)" >> $GITHUB_OUTPUT
+          echo "frontend_name=$(terraform output -raw frontend_name)" >> $GITHUB_OUTPUT
+          echo "frontend_url=$(terraform output -raw frontend_url)" >> $GITHUB_OUTPUT
+
+      - name: Save Infrastructure Outputs to Artifacts
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          mkdir -p ../outputs
+          terraform output -json > ../outputs/terraform-outputs.json
+          echo "ACR_NAME=$(terraform output -raw acr_name)" > ../outputs/infrastructure.env
+          echo "ACR_LOGIN_SERVER=$(terraform output -raw acr_login_server)" >> ../outputs/infrastructure.env
+          echo "RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name)" >> ../outputs/infrastructure.env
+          echo "AUTH_API_NAME=$(terraform output -raw auth_api_name)" >> ../outputs/infrastructure.env
+          echo "USERS_API_NAME=$(terraform output -raw users_api_name)" >> ../outputs/infrastructure.env
+          echo "TODOS_API_NAME=$(terraform output -raw todos_api_name)" >> ../outputs/infrastructure.env
+          echo "LOG_PROCESSOR_NAME=$(terraform output -raw log_processor_name)" >> ../outputs/infrastructure.env
+          echo "FRONTEND_NAME=$(terraform output -raw frontend_name)" >> ../outputs/infrastructure.env
+          echo "FRONTEND_URL=$(terraform output -raw frontend_url)" >> ../outputs/infrastructure.env
+
+      - name: Upload Infrastructure Outputs
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: infrastructure-outputs
+          path: outputs/
+          retention-days: 30
