@@ -1,69 +1,37 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+.terraform.lock.hcl
+
+# Ignore provider plugin binaries inside .terraform
+.terraform/providers/
+
 # Node.js
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+dist/
+build/
 
-# Go
-auth-api/auth-api
-auth-api/vendor/
-auth-api/bin/
-*.exe
-*.test
-*.out
+# Java / Maven
+target/
+*.class
+*.jar
 
 # Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-log-message-processor/.env
+*.py[cod]
+venv/
 
-# Java (Spring Boot)
-*.class
-*.jar
-*.war
-*.ear
-*.iml
-*.log
-target/
-users-api/.mvn/
-users-api/mvnw
-users-api/mvnw.cmd
-
-# Vue.js / Frontend
-frontend/node_modules/
-frontend/dist/
-frontend/.cache/
-frontend/npm-debug.log*
-frontend/yarn-debug.log*
-frontend/yarn-error.log*
-
-# Terraform
-# Terraform
-.terraform/
-**/.terraform/
-.terraform.lock.hcl
-**/.terraform.lock.hcl
-terraform.tfstate
-**/terraform.tfstate
-terraform.tfstate.backup
-**/terraform.tfstate.backup
-
-# Docker
-*.pid
-
-# OS/IDE
-.DS_Store
-Thumbs.db
-.idea/
+# IDEs
 .vscode/
-*.swp
-*.swo
+.idea/
 
-# Logs
+# macOS
+.DS_Store
+
+# Logs and environment
 *.log
-
-# Misc
 .env
-.env.*
+
