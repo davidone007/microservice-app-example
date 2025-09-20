@@ -40,9 +40,14 @@ frontend/yarn-debug.log*
 frontend/yarn-error.log*
 
 # Terraform
+# Terraform
+.terraform/
 **/.terraform/
+.terraform.lock.hcl
 **/.terraform.lock.hcl
+terraform.tfstate
 **/terraform.tfstate
+terraform.tfstate.backup
 **/terraform.tfstate.backup
 
 # Docker
