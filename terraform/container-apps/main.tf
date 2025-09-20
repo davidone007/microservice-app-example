@@ -4,13 +4,13 @@ provider "azurerm" {
 }
 
 module "container_app_env" {
-  source                       = "./modules/container-app-env"
-  name                         = "cae-microservices"
-  location                     = data.terraform_remote_state.base.outputs.location
-  resource_group_name          = data.terraform_remote_state.base.outputs.resource_group_name
-  log_analytics_workspace_id   = data.terraform_remote_state.base.outputs.log_analytics_workspace_id
-  container_apps_subnet_id     = data.terraform_remote_state.base.outputs.container_apps_subnet_id
-  tags                         = var.tags
+  source                     = "./modules/container-app-env"
+  name                       = "cae-microservices"
+  location                   = data.terraform_remote_state.base.outputs.location
+  resource_group_name        = data.terraform_remote_state.base.outputs.resource_group_name
+  log_analytics_workspace_id = data.terraform_remote_state.base.outputs.log_analytics_workspace_id
+  container_apps_subnet_id   = data.terraform_remote_state.base.outputs.container_apps_subnet_id
+  tags                       = var.tags
 }
 
 module "frontend" {
@@ -52,7 +52,7 @@ module "auth_api" {
   env = [
     { name = "USERS_API_ADDRESS", value = "http://${module.users_api.fqdn}" }
   ]
-  tags                         = var.tags
+  tags = var.tags
 }
 
 module "todos_api" {

@@ -14,7 +14,7 @@ resource "azurerm_container_app" "main" {
   template {
     min_replicas = var.scale != null ? var.scale.min_replicas : null
     max_replicas = var.scale != null ? var.scale.max_replicas : null
-    
+
     container {
       name   = var.name
       image  = var.image_name
@@ -24,8 +24,8 @@ resource "azurerm_container_app" "main" {
       dynamic "env" {
         for_each = var.env
         content {
-          name      = env.value.name
-          value     = env.value.value
+          name  = env.value.name
+          value = env.value.value
         }
       }
     }
@@ -35,9 +35,9 @@ resource "azurerm_container_app" "main" {
     external_enabled = var.is_external
     target_port      = var.target_port
     transport        = "http"
-    
+
     traffic_weight {
-      percentage = 100
+      percentage      = 100
       latest_revision = true
     }
   }
@@ -54,7 +54,7 @@ resource "azurerm_container_app" "main" {
 
 resource "azurerm_key_vault_access_policy" "main" {
   # Solo crea la política si hay secretos que usar
-  count        = length(keys(var.secrets)) > 0 ? 1 : 0
+  count = length(keys(var.secrets)) > 0 ? 1 : 0
 
   key_vault_id = var.key_vault_id
   tenant_id    = data.azurerm_client_config.current.tenant_id
