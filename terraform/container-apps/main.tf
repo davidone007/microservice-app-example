@@ -67,13 +67,8 @@ module "todos_api" {
   memory                       = "1.0Gi"
   key_vault_id                 = data.terraform_remote_state.base.outputs.key_vault_id
   key_vault_uri                = data.terraform_remote_state.base.outputs.key_vault_uri
-  secrets = {
-    "JWT_SECRET"     = "jwt-secret",
-    "REDIS_HOST"     = "redis-host",
-    "REDIS_PORT"     = "redis-port",
-    "REDIS_PASSWORD" = "redis-password"
-  }
-  tags = var.tags
+  secrets                      = {}
+  tags                         = var.tags
 }
 
 module "log_message_processor" {
@@ -88,11 +83,7 @@ module "log_message_processor" {
   memory                       = "0.5Gi"
   key_vault_id                 = data.terraform_remote_state.base.outputs.key_vault_id
   key_vault_uri                = data.terraform_remote_state.base.outputs.key_vault_uri
-  secrets = {
-    "REDIS_HOST"     = "redis-host",
-    "REDIS_PORT"     = "redis-port",
-    "REDIS_PASSWORD" = "redis-password"
-  }
+  secrets                      = {}
   scale = {
     min_replicas = 1
     max_replicas = 1

@@ -45,9 +45,8 @@ resource "azurerm_container_app" "main" {
   dynamic "secret" {
     for_each = var.secrets
     content {
-      name                = secret.key
-      key_vault_secret_id = "${var.key_vault_uri}secrets/${secret.value}"
-      identity            = azurerm_container_app.main.identity[0].principal_id
+      name                = lower(replace(secret.key, "_", "-"))
+      key_vault_secret_id = secret.value
     }
   }
 }
