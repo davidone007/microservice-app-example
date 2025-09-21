@@ -3,6 +3,12 @@ provider "azurerm" {
   features {}
 }
 
+# Get ACR details from base infrastructure state
+data "azurerm_container_registry" "acr" {
+  name                = "microservicesacr20250920"
+  resource_group_name = data.terraform_remote_state.base.outputs.resource_group_name
+}
+
 module "container_app_env" {
   source                     = "./modules/container-app-env"
   name                       = "cae-microservices"
@@ -92,36 +98,32 @@ module "log_message_processor" {
 }
 
 # Grant AcrPull to the container apps managed identities so they can pull images from the ACR
-data "azurerm_role_definition" "acr_pull" {
-  name = "AcrPull"
-}
-
 resource "azurerm_role_assignment" "frontend_acr_pull" {
   scope                = data.terraform_remote_state.base.outputs.acr_id
-  role_definition_id   = data.azurerm_role_definition.acr_pull.id
+  role_definition_name = "AcrPull"
   principal_id         = module.frontend.principal_id
 }
 
 resource "azurerm_role_assignment" "users_api_acr_pull" {
   scope                = data.terraform_remote_state.base.outputs.acr_id
-  role_definition_id   = data.azurerm_role_definition.acr_pull.id
+  role_definition_name = "AcrPull"
   principal_id         = module.users_api.principal_id
 }
 
 resource "azurerm_role_assignment" "auth_api_acr_pull" {
   scope                = data.terraform_remote_state.base.outputs.acr_id
-  role_definition_id   = data.azurerm_role_definition.acr_pull.id
+  role_definition_name = "AcrPull"
   principal_id         = module.auth_api.principal_id
 }
 
 resource "azurerm_role_assignment" "todos_api_acr_pull" {
   scope                = data.terraform_remote_state.base.outputs.acr_id
-  role_definition_id   = data.azurerm_role_definition.acr_pull.id
+  role_definition_name = "AcrPull"
   principal_id         = module.todos_api.principal_id
 }
 
 resource "azurerm_role_assignment" "log_message_processor_acr_pull" {
   scope                = data.terraform_remote_state.base.outputs.acr_id
-  role_definition_id   = data.azurerm_role_definition.acr_pull.id
+  role_definition_name = "AcrPull"
   principal_id         = module.log_message_processor.principal_id
 }
