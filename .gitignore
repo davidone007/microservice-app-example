@@ -34,4 +34,6 @@ venv/
 # Logs and environment
 *.log
 .env
+*.tfvars
+!*.tfvars.example
 

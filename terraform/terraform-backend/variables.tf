@@ -27,3 +27,9 @@ variable "key" {
   type        = string
   default     = "backend.terraform.tfstate"
 }
+
+variable "subscription_id" {
+  description = "(Optional) Subscription ID to target. If not provided, the provider will use the Azure CLI default subscription."
+  type        = string
+  default     = "b05f5d22-9a6a-4a96-b58d-8d90aebd2986"
+}

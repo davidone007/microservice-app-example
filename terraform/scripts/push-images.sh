@@ -6,7 +6,7 @@ set -e
 # --- Configuración ---
 # El servidor de login de ACR es una salida de la Fase 1 de Terraform.
 # Puedes obtenerlo con: terraform output -state=../base-infrastructure/terraform.tfstate acr_login_server
-ACR_LOGIN_SERVER="microservicesacrtaller.azurecr.io"
+ACR_LOGIN_SERVER="microservicesacr20250920.azurecr.io"
 
 # Lista de servicios a construir y subir. Los nombres de directorio deben coincidir.
 SERVICES=("auth-api" "frontend" "log-message-processor" "todos-api" "users-api")
