@@ -7,25 +7,25 @@ variable "resource_group_name" {
 variable "location" {
   description = "Ubicación de los recursos de Azure."
   type        = string
-  default     = "westeurope"
+  default     = "centralus"
 }
 
 variable "acr_name" {
   description = "Nombre del Azure Container Registry."
   type        = string
-  default     = "microservicesacrtaller"
+  default     = "microservicesacr20250920"
 }
 
 variable "redis_name" {
   description = "Nombre de la instancia de Azure Cache for Redis."
   type        = string
-  default     = "microservices-redis-cache"
+  default     = "msapp-redis-20250920"
 }
 
 variable "key_vault_name" {
   description = "Nombre del Azure Key Vault."
   type        = string
-  default     = "microservices-kv-taller"
+  default     = "msapp-kv-20250920"
 }
 
 variable "log_analytics_name" {
