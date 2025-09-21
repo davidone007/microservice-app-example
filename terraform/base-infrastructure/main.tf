@@ -5,6 +5,11 @@ provider "azurerm" {
 
 data "azurerm_client_config" "current" {}
 
+resource "random_integer" "suffix" {
+  min = 1000
+  max = 9999
+}
+
 module "resource_group" {
   source   = "./modules/resource_group"
   name     = var.resource_group_name
@@ -45,25 +50,22 @@ module "redis" {
 }
 
 module "key_vault" {
-  source              = "./modules/key_vault"
-  name                = var.key_vault_name
-  resource_group_name = module.resource_group.name
-  location            = module.resource_group.location
-  tenant_id           = data.azurerm_client_config.current.tenant_id
-  object_id           = data.azurerm_client_config.current.object_id
-  tags                = var.tags
-
-  secrets = {
-    "jwt-secret"              = var.jwt_secret,
-    "redis-connection-string" = module.redis.primary_connection_string,
-    "redis-host"              = module.redis.hostname,
-    "redis-port"              = tostring(module.redis.ssl_port),
-    "redis-password"          = module.redis.primary_access_key,
-    "db-host"                 = module.postgresql.db_server_name,
-    "db-name"                 = module.postgresql.db_name,
-    "db-user"                 = module.postgresql.db_admin_username,
-    "db-password"             = var.db_admin_password
-  }
+  source                          = "./modules/key_vault"
+  name                            = "${var.key_vault_name}-${random_integer.suffix.result}"
+  resource_group_name             = module.resource_group.name
+  location                        = module.resource_group.location
+  tenant_id                       = data.azurerm_client_config.current.tenant_id
+  object_id                       = data.azurerm_client_config.current.object_id
+  tags                            = var.tags
+  jwt_secret                      = var.jwt_secret
+  db_admin_password               = var.db_admin_password
+  redis_primary_connection_string = module.redis.primary_connection_string
+  redis_hostname                  = module.redis.hostname
+  redis_ssl_port                  = module.redis.ssl_port
+  redis_primary_access_key        = module.redis.primary_access_key
+  postgresql_db_server_name       = module.postgresql.db_server_name
+  postgresql_db_name              = module.postgresql.db_name
+  postgresql_db_admin_username    = module.postgresql.db_admin_username
 }
 
 module "postgresql" {
