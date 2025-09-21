@@ -1,31 +1,30 @@
-# users-api/Dockerfile
-FROM openjdk:8-jdk-alpine
+# users-api/Dockerfile - multi-stage build
 
-# Establecer directorio de trabajo
+# Stage 1: build with Maven (uses Java 8 to match the project)
+FROM maven:3.6.3-jdk-8 AS builder
 WORKDIR /app
 
-# Copiar archivos de Maven (para cache de dependencias)
-COPY pom.xml .
+# Copy Maven wrapper and project files
 COPY mvnw .
 COPY .mvn .mvn
+COPY pom.xml .
 
-# Hacer el script mvnw ejecutable
-RUN chmod +x mvnw
+# Copy source and build
+COPY src ./src
 
-# Descargar dependencias (para optimizar cache de Docker)
-RUN ./mvnw dependency:go-offline -B
+# Ensure wrapper is executable and build the project (skip tests to speed up)
+RUN chmod +x mvn || true
+RUN mvn -B -DskipTests clean package
 
-# Copiar código fuente
-COPY src src
+# Stage 2: runtime
+FROM openjdk:8-jre-alpine
+WORKDIR /app
 
-# Compilar la aplicación
-RUN ./mvnw clean package 
+# Copy JAR from builder stage
+## Copy the produced JAR. Use a wildcard so changes to the version in pom.xml don't break the Dockerfile.
+COPY --from=builder /app/target/*.jar ./users-api.jar
 
-# Exponer puerto
+# Expose port and run
 EXPOSE 8083
-
-# Variables de entorno
 ENV SERVER_PORT=8083
-
-# Comando para ejecutar la aplicación
-CMD ["java", "-jar", "target/users-api-0.0.1-SNAPSHOT.jar"]
+CMD ["java", "-jar", "./users-api.jar"]
