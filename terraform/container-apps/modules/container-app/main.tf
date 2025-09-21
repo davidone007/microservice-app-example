@@ -61,3 +61,8 @@ resource "azurerm_key_vault_access_policy" "main" {
 
   secret_permissions = ["Get", "List"]
 }
+
+output "principal_id" {
+  description = "The principal id of the system-assigned identity for the container app."
+  value       = azurerm_container_app.main.identity[0].principal_id
+}

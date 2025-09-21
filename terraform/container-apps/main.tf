@@ -1,5 +1,5 @@
 provider "azurerm" {
-  subscription_id = "256bea1e-51c0-4409-97c4-118ae42d16dc"
+  subscription_id = "b05f5d22-9a6a-4a96-b58d-8d90aebd2986"
   features {}
 }
 
@@ -89,4 +89,39 @@ module "log_message_processor" {
     max_replicas = 1
   }
   tags = var.tags
+}
+
+# Grant AcrPull to the container apps managed identities so they can pull images from the ACR
+data "azurerm_role_definition" "acr_pull" {
+  name = "AcrPull"
+}
+
+resource "azurerm_role_assignment" "frontend_acr_pull" {
+  scope                = data.terraform_remote_state.base.outputs.acr_id
+  role_definition_id   = data.azurerm_role_definition.acr_pull.id
+  principal_id         = module.frontend.principal_id
+}
+
+resource "azurerm_role_assignment" "users_api_acr_pull" {
+  scope                = data.terraform_remote_state.base.outputs.acr_id
+  role_definition_id   = data.azurerm_role_definition.acr_pull.id
+  principal_id         = module.users_api.principal_id
+}
+
+resource "azurerm_role_assignment" "auth_api_acr_pull" {
+  scope                = data.terraform_remote_state.base.outputs.acr_id
+  role_definition_id   = data.azurerm_role_definition.acr_pull.id
+  principal_id         = module.auth_api.principal_id
+}
+
+resource "azurerm_role_assignment" "todos_api_acr_pull" {
+  scope                = data.terraform_remote_state.base.outputs.acr_id
+  role_definition_id   = data.azurerm_role_definition.acr_pull.id
+  principal_id         = module.todos_api.principal_id
+}
+
+resource "azurerm_role_assignment" "log_message_processor_acr_pull" {
+  scope                = data.terraform_remote_state.base.outputs.acr_id
+  role_definition_id   = data.azurerm_role_definition.acr_pull.id
+  principal_id         = module.log_message_processor.principal_id
 }
