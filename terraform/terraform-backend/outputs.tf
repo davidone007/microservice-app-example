@@ -1,14 +1,20 @@
-output "storage_account_name" {
-  description = "El nombre de la cuenta de almacenamiento para el estado de Terraform."
-  value       = azurerm_storage_account.tfstate.name
-}
-
 output "resource_group_name" {
-  description = "El nombre del grupo de recursos para el estado de Terraform."
+  description = "Name of the resource group for tfstate"
   value       = azurerm_resource_group.tfstate.name
 }
 
-output "storage_container_name" {
-  description = "El nombre del contenedor de almacenamiento para el estado de Terraform."
+output "storage_account_name" {
+  description = "Storage account name created for tfstate"
+  value       = azurerm_storage_account.tfstate.name
+}
+
+output "container_name" {
+  description = "Blob container name used for tfstate"
   value       = azurerm_storage_container.tfstate.name
 }
+
+output "key" {
+  description = "Default blob key (file name) to use for tfstate"
+  value       = var.key
+}
+
