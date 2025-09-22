@@ -44,9 +44,13 @@ jobs:
         with:
           go-version: '1.18'
 
+      - name: Install Go dep
+        if: matrix.service.tech == 'go'
+        run: go install github.com/golang/dep/cmd/dep@latest
+
       - name: Go - Install dependencies
         if: matrix.service.tech == 'go'
-        run: go mod download
+        run: dep ensure
         working-directory: ${{ matrix.service.path }}
 
       - name: Go - Run tests
