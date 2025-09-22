@@ -23,8 +23,30 @@ resource "azurerm_container_app" "main" {
   }
 
   template {
-    min_replicas = var.scale != null ? var.scale.min_replicas : null
-    max_replicas = var.scale != null ? var.scale.max_replicas : null
+    min_replicas = var.scale != null ? var.scale.min_replicas : 0
+    max_replicas = var.scale != null ? var.scale.max_replicas : 1
+
+    # Reglas de autoscaling HTTP
+    dynamic "http_scale_rule" {
+      for_each = var.scale != null ? [for rule in var.scale.rules : rule if rule.type == "http"] : []
+      content {
+        name                = http_scale_rule.value.name
+        concurrent_requests = http_scale_rule.value.metadata["concurrentRequests"]
+      }
+    }
+
+    # Reglas de autoscaling basadas en CPU
+    dynamic "custom_scale_rule" {
+      for_each = var.scale != null ? [for rule in var.scale.rules : rule if rule.type == "cpu"] : []
+      content {
+        name             = custom_scale_rule.value.name
+        custom_rule_type = "cpu"
+        metadata = {
+          "type" = "Utilization"
+          "value" = custom_scale_rule.value.metadata["value"]
+        }
+      }
+    }
 
     container {
       name   = var.name

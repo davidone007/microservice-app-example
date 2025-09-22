@@ -34,7 +34,16 @@ module "frontend" {
   memory                       = "0.5Gi"
   scale = {
     min_replicas = 1
-    max_replicas = 1
+    max_replicas = 5
+    rules = [
+      {
+        name = "http-rule"
+        type = "http"
+        metadata = {
+          "concurrentRequests" = "5"
+        }
+      }
+    ]
   }
   target_port      = 8080
   is_external      = true
@@ -53,7 +62,17 @@ module "todos_api" {
   memory                       = "0.5Gi"
   scale = {
     min_replicas = 1
-    max_replicas = 1
+    max_replicas = 5
+    rules = [
+      {
+        name = "cpu-scaling"
+        type = "cpu"
+        metadata = {
+          "type"  = "Utilization"
+          "value" = "80"
+        }
+      }
+    ]
   }
   target_port      = 8082
   is_external      = false
@@ -72,7 +91,17 @@ module "users_api" {
   memory                       = "1.0Gi"
   scale = {
     min_replicas = 1
-    max_replicas = 1
+    max_replicas = 5
+    rules = [
+      {
+        name = "cpu-scaling"
+        type = "cpu"
+        metadata = {
+          "type"  = "Utilization"
+          "value" = "75"
+        }
+      }
+    ]
   }
   target_port = 8083
   is_external = false
@@ -109,7 +138,17 @@ module "auth_api" {
   memory                       = "1.0Gi"
   scale = {
     min_replicas = 1
-    max_replicas = 1
+    max_replicas = 3
+    rules = [
+      {
+        name = "cpu-scaling"
+        type = "cpu"
+        metadata = {
+          "type"  = "Utilization"
+          "value" = "70"
+        }
+      }
+    ]
   }
   target_port = 8081
   is_external = false
@@ -134,7 +173,17 @@ module "log_message_processor" {
   memory                       = "1.0Gi"
   scale = {
     min_replicas = 1
-    max_replicas = 1
+    max_replicas = 2
+    rules = [
+      {
+        name = "cpu-scaling"
+        type = "cpu"
+        metadata = {
+          "type"  = "Utilization"
+          "value" = "80"
+        }
+      }
+    ]
   }
   target_port        = 8084
   is_external        = false

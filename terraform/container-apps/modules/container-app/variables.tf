@@ -63,6 +63,11 @@ variable "scale" {
   type = object({
     min_replicas = number
     max_replicas = number
+    rules = optional(list(object({
+      name = string
+      type = string  # "http", "cpu", "memory", "azure-queue", etc.
+      metadata = map(string)
+    })), [])
   })
   default = null
 }
