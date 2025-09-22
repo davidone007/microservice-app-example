@@ -7,6 +7,17 @@ resource "azurerm_container_app" "main" {
   revision_mode                = "Single"
   tags                         = var.tags
 
+  secret {
+    name  = "acr-password"
+    value = var.acr_admin_password
+  }
+
+  registry {
+    server               = split("/", var.image_name)[0]
+    username             = var.acr_admin_username
+    password_secret_name = "acr-password"
+  }
+
   identity {
     type = "SystemAssigned"
   }

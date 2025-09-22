@@ -1,13 +1,18 @@
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 4.0"
+    }
+  }
+}
+
 provider "azurerm" {
   subscription_id = "b05f5d22-9a6a-4a96-b58d-8d90aebd2986"
   features {}
 }
 
-# Get ACR details from base infrastructure state
-data "azurerm_container_registry" "acr" {
-  name                = "microservicesacr20250920"
-  resource_group_name = data.terraform_remote_state.base.outputs.resource_group_name
-}
+
 
 module "container_app_env" {
   source                     = "./modules/container-app-env"
@@ -24,41 +29,18 @@ module "frontend" {
   name                         = "frontend"
   resource_group_name          = data.terraform_remote_state.base.outputs.resource_group_name
   container_app_environment_id = module.container_app_env.id
-  image_name                   = "${data.terraform_remote_state.base.outputs.acr_login_server}/frontend:${var.image_tag}"
-  is_external                  = true
-  target_port                  = 80
-  cpu                          = 0.5
-  memory                       = "1.0Gi"
-  tags                         = var.tags
-}
-
-module "users_api" {
-  source                       = "./modules/container-app"
-  name                         = "users-api"
-  resource_group_name          = data.terraform_remote_state.base.outputs.resource_group_name
-  container_app_environment_id = module.container_app_env.id
-  image_name                   = "${data.terraform_remote_state.base.outputs.acr_login_server}/users-api:${var.image_tag}"
-  is_external                  = false
-  target_port                  = 8083
-  cpu                          = 0.5
-  memory                       = "1.0Gi"
-  tags                         = var.tags
-}
-
-module "auth_api" {
-  source                       = "./modules/container-app"
-  name                         = "auth-api"
-  resource_group_name          = data.terraform_remote_state.base.outputs.resource_group_name
-  container_app_environment_id = module.container_app_env.id
-  image_name                   = "${data.terraform_remote_state.base.outputs.acr_login_server}/auth-api:${var.image_tag}"
-  is_external                  = true
-  target_port                  = 8000
+  image_name                   = "${data.terraform_remote_state.base.outputs.acr_login_server}/frontend:latest"
   cpu                          = 0.25
   memory                       = "0.5Gi"
-  env = [
-    { name = "USERS_API_ADDRESS", value = "http://${module.users_api.fqdn}" }
-  ]
-  tags = var.tags
+  scale = {
+    min_replicas = 1
+    max_replicas = 1
+  }
+  target_port      = 8080
+  is_external      = true
+  tags             = var.tags
+  acr_admin_username = data.terraform_remote_state.base.outputs.acr_admin_username
+  acr_admin_password = data.terraform_remote_state.base.outputs.acr_admin_password
 }
 
 module "todos_api" {
@@ -66,15 +48,80 @@ module "todos_api" {
   name                         = "todos-api"
   resource_group_name          = data.terraform_remote_state.base.outputs.resource_group_name
   container_app_environment_id = module.container_app_env.id
-  image_name                   = "${data.terraform_remote_state.base.outputs.acr_login_server}/todos-api:${var.image_tag}"
-  is_external                  = true
-  target_port                  = 8082
+  image_name                   = "${data.terraform_remote_state.base.outputs.acr_login_server}/todos-api:latest"
+  cpu                          = 0.25
+  memory                       = "0.5Gi"
+  scale = {
+    min_replicas = 1
+    max_replicas = 1
+  }
+  target_port      = 8082
+  is_external      = false
+  tags             = var.tags
+  acr_admin_username = data.terraform_remote_state.base.outputs.acr_admin_username
+  acr_admin_password = data.terraform_remote_state.base.outputs.acr_admin_password
+}
+
+module "users_api" {
+  source                       = "./modules/container-app"
+  name                         = "users-api"
+  resource_group_name          = data.terraform_remote_state.base.outputs.resource_group_name
+  container_app_environment_id = module.container_app_env.id
+  image_name                   = "${data.terraform_remote_state.base.outputs.acr_login_server}/users-api:latest"
   cpu                          = 0.5
   memory                       = "1.0Gi"
-  key_vault_id                 = data.terraform_remote_state.base.outputs.key_vault_id
-  key_vault_uri                = data.terraform_remote_state.base.outputs.key_vault_uri
-  secrets                      = {}
-  tags                         = var.tags
+  scale = {
+    min_replicas = 1
+    max_replicas = 1
+  }
+  target_port = 8083
+  is_external = false
+  env = [
+    {
+      name  = "SPRING_DATASOURCE_URL"
+      value = "jdbc:postgresql://${data.terraform_remote_state.base.outputs.postgresql_server_name}.postgres.database.azure.com:5432/users?sslmode=require"
+    },
+    {
+      name  = "SPRING_DATASOURCE_USERNAME"
+      value = data.terraform_remote_state.base.outputs.postgresql_admin_username
+    },
+    {
+      name  = "SPRING_DATASOURCE_PASSWORD"
+      value = data.terraform_remote_state.base.outputs.postgresql_admin_password
+    },
+    {
+      name  = "SPRING_JPA_HIBERNATE_DDL_AUTO"
+      value = "update"
+    }
+  ]
+  tags               = var.tags
+  acr_admin_username = data.terraform_remote_state.base.outputs.acr_admin_username
+  acr_admin_password = data.terraform_remote_state.base.outputs.acr_admin_password
+}
+
+module "auth_api" {
+  source                       = "./modules/container-app"
+  name                         = "auth-api"
+  resource_group_name          = data.terraform_remote_state.base.outputs.resource_group_name
+  container_app_environment_id = module.container_app_env.id
+  image_name                   = "${data.terraform_remote_state.base.outputs.acr_login_server}/auth-api:latest"
+  cpu                          = 0.5
+  memory                       = "1.0Gi"
+  scale = {
+    min_replicas = 1
+    max_replicas = 1
+  }
+  target_port = 8081
+  is_external = false
+  env = [
+    {
+      name  = "REDIS_URL"
+      value = data.terraform_remote_state.base.outputs.redis_url
+    }
+  ]
+  tags               = var.tags
+  acr_admin_username = data.terraform_remote_state.base.outputs.acr_admin_username
+  acr_admin_password = data.terraform_remote_state.base.outputs.acr_admin_password
 }
 
 module "log_message_processor" {
@@ -82,48 +129,16 @@ module "log_message_processor" {
   name                         = "log-message-processor"
   resource_group_name          = data.terraform_remote_state.base.outputs.resource_group_name
   container_app_environment_id = module.container_app_env.id
-  image_name                   = "${data.terraform_remote_state.base.outputs.acr_login_server}/log-message-processor:${var.image_tag}"
-  is_external                  = false
-  target_port                  = 80
-  cpu                          = 0.25
-  memory                       = "0.5Gi"
-  key_vault_id                 = data.terraform_remote_state.base.outputs.key_vault_id
-  key_vault_uri                = data.terraform_remote_state.base.outputs.key_vault_uri
-  secrets                      = {}
+  image_name                   = "${data.terraform_remote_state.base.outputs.acr_login_server}/log-message-processor:latest"
+  cpu                          = 0.5
+  memory                       = "1.0Gi"
   scale = {
     min_replicas = 1
     max_replicas = 1
   }
-  tags = var.tags
-}
-
-# Grant AcrPull to the container apps managed identities so they can pull images from the ACR
-resource "azurerm_role_assignment" "frontend_acr_pull" {
-  scope                = data.terraform_remote_state.base.outputs.acr_id
-  role_definition_name = "AcrPull"
-  principal_id         = module.frontend.principal_id
-}
-
-resource "azurerm_role_assignment" "users_api_acr_pull" {
-  scope                = data.terraform_remote_state.base.outputs.acr_id
-  role_definition_name = "AcrPull"
-  principal_id         = module.users_api.principal_id
-}
-
-resource "azurerm_role_assignment" "auth_api_acr_pull" {
-  scope                = data.terraform_remote_state.base.outputs.acr_id
-  role_definition_name = "AcrPull"
-  principal_id         = module.auth_api.principal_id
-}
-
-resource "azurerm_role_assignment" "todos_api_acr_pull" {
-  scope                = data.terraform_remote_state.base.outputs.acr_id
-  role_definition_name = "AcrPull"
-  principal_id         = module.todos_api.principal_id
-}
-
-resource "azurerm_role_assignment" "log_message_processor_acr_pull" {
-  scope                = data.terraform_remote_state.base.outputs.acr_id
-  role_definition_name = "AcrPull"
-  principal_id         = module.log_message_processor.principal_id
+  target_port        = 8084
+  is_external        = false
+  tags               = var.tags
+  acr_admin_username = data.terraform_remote_state.base.outputs.acr_admin_username
+  acr_admin_password = data.terraform_remote_state.base.outputs.acr_admin_password
 }

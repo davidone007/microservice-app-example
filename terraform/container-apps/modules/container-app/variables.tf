@@ -7,6 +7,14 @@ variable "resource_group_name" {
 variable "container_app_environment_id" {
   type = string
 }
+variable "acr_admin_username" {
+  type      = string
+  sensitive = true
+}
+variable "acr_admin_password" {
+  type      = string
+  sensitive = true
+}
 variable "image_name" {
   type = string
 }

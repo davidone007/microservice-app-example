@@ -18,6 +18,18 @@ output "acr_login_server" {
   value       = module.acr.login_server
 }
 
+output "acr_admin_username" {
+  description = "Usuario administrador del ACR."
+  value       = module.acr.admin_username
+  sensitive   = true
+}
+
+output "acr_admin_password" {
+  description = "Contraseña del administrador del ACR."
+  value       = module.acr.admin_password
+  sensitive   = true
+}
+
 output "key_vault_id" {
   description = "ID del Azure Key Vault."
   value       = module.key_vault.id
@@ -47,4 +59,26 @@ output "vnet_id" {
 output "container_apps_subnet_id" {
   description = "ID de la subred para Container Apps."
   value       = module.networking.subnet_ids["container-apps-subnet"]
+}
+
+output "postgresql_server_name" {
+  description = "Nombre del servidor de PostgreSQL."
+  value       = module.postgresql.db_server_name
+}
+
+output "postgresql_admin_username" {
+  description = "Usuario administrador de PostgreSQL."
+  value       = module.postgresql.db_admin_username
+}
+
+output "postgresql_admin_password" {
+  description = "Contraseña del administrador de PostgreSQL."
+  value       = module.postgresql.db_admin_password
+  sensitive   = true
+}
+
+output "redis_url" {
+  description = "URL de conexión a Redis."
+  value       = "redis://${module.redis.hostname}:${module.redis.ssl_port}"
+  sensitive   = true
 }
