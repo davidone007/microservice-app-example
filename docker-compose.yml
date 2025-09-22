@@ -12,6 +12,23 @@ services:
       timeout: 5s
       retries: 5
 
+  # Base de datos PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: usersdb
+      POSTGRES_USER: usersuser
+      POSTGRES_PASSWORD: userspass
+    ports:
+      - "5432:5432"
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "usersuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Users API (Java Spring Boot)
   users-api:
     build: ./users-api
@@ -20,9 +37,15 @@ services:
     environment:
       - JWT_SECRET=PRFT
       - SERVER_PORT=8083
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/usersdb
+      - SPRING_DATASOURCE_USERNAME=usersuser
+      - SPRING_DATASOURCE_PASSWORD=userspass
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
     networks:
       - microservices-network
     depends_on:
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
