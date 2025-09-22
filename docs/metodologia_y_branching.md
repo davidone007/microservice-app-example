@@ -49,7 +49,6 @@ git push origin hotfix/fix-auth
 
 ### 🔹 Operaciones / Infra (Ops Team) – Git Flow para Infra
 
-* **ops/main** → infraestructura actual de producción (estado real).
 * **ops/feature/<cambio>** → propuesta de cambio infra (ejemplo: crear cluster EKS, añadir Redis).
 * **ops/hotfix/<issue>** → correcciones urgentes de infraestructura (ejemplo: aumentar tamaño de RDS, cambiar regla de seguridad).
 
