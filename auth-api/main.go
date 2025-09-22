@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	gommonlog "github.com/labstack/gommon/log"
+	"github.com/sony/gobreaker"
 )
 
 var (
@@ -32,6 +33,17 @@ func main() {
 		jwtSecret = envJwtSecret
 	}
 
+	// configure circuit breaker settings for Users API
+	cbSettings := gobreaker.Settings{
+		Name:        "UsersAPI",
+		MaxRequests: 3,
+		Interval:    60 * time.Second,
+		Timeout:     10 * time.Second,
+		OnStateChange: func(name string, from gobreaker.State, to gobreaker.State) {
+			log.Printf("circuit breaker '%s' state change: %v -> %v", name, from, to)
+		},
+	}
+
 	userService := UserService{
 		Client:         http.DefaultClient,
 		UserAPIAddress: userAPIAddress,
@@ -40,6 +52,7 @@ func main() {
 			"johnd_foo":   nil,
 			"janed_ddd":   nil,
 		},
+		Breaker: gobreaker.NewCircuitBreaker(cbSettings),
 	}
 
 	e := echo.New()
@@ -68,6 +81,22 @@ func main() {
 	})
 
 	e.POST("/login", getLoginHandler(userService))
+
+	// Endpoint to inspect circuit breaker state for testing
+	e.GET("/breaker", func(c echo.Context) error {
+		state := "unknown"
+		if userService.Breaker != nil {
+			switch userService.Breaker.State() {
+			case gobreaker.StateClosed:
+				state = "closed"
+			case gobreaker.StateOpen:
+				state = "open"
+			case gobreaker.StateHalfOpen:
+				state = "half-open"
+			}
+		}
+		return c.JSON(http.StatusOK, map[string]string{"state": state})
+	})
 
 	// Start server
 	e.Logger.Fatal(e.Start(hostport))
