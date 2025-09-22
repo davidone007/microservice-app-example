@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -20,6 +21,9 @@ var (
 
 	// ErrWrongCredentials indicates that login attempt failed because of incorrect login or password
 	ErrWrongCredentials = echo.NewHTTPError(http.StatusUnauthorized, "username or password is invalid")
+
+	// ErrServiceUnavailable returned when downstream service is unavailable (circuit open)
+	ErrServiceUnavailable = echo.NewHTTPError(http.StatusServiceUnavailable, "service temporarily unavailable, try again later")
 
 	jwtSecret = "myfancysecret"
 )
@@ -119,12 +123,18 @@ func getLoginHandler(userService UserService) echo.HandlerFunc {
 		ctx := c.Request().Context()
 		user, err := userService.Login(ctx, requestData.Username, requestData.Password)
 		if err != nil {
-			if err != ErrWrongCredentials {
-				log.Printf("could not authorize user '%s': %s", requestData.Username, err.Error())
-				return ErrHttpGenericMessage
+			if err == ErrWrongCredentials {
+				return ErrWrongCredentials
 			}
 
-			return ErrWrongCredentials
+			// Map circuit breaker open or too many requests to 503 Service Unavailable
+			if errors.Is(err, gobreaker.ErrOpenState) || errors.Is(err, gobreaker.ErrTooManyRequests) {
+				log.Printf("downstream users-api unavailable for user '%s': %s", requestData.Username, err.Error())
+				return ErrServiceUnavailable
+			}
+
+			log.Printf("could not authorize user '%s': %s", requestData.Username, err.Error())
+			return ErrHttpGenericMessage
 		}
 		token := jwt.New(jwt.SigningMethodHS256)
 
