@@ -1,96 +1,74 @@
-'use strict';
-const cache = require('memory-cache');
-const {Annotation, 
-    jsonEncoder: {JSON_V2}} = require('zipkin');
+"use strict";
+const db = require("./db");
+const { v4: uuidv4 } = require("uuid");
+const {
+  Annotation,
+  jsonEncoder: { JSON_V2 },
+} = require("zipkin");
 
-const OPERATION_CREATE = 'CREATE',
-      OPERATION_DELETE = 'DELETE';
+const OPERATION_CREATE = "CREATE",
+  OPERATION_DELETE = "DELETE";
 
 class TodoController {
-    constructor({tracer, redisClient, logChannel}) {
-        this._tracer = tracer;
-        this._redisClient = redisClient;
-        this._logChannel = logChannel;
+  constructor({ tracer, redisClient, logChannel }) {
+    this._tracer = tracer;
+    this._redisClient = redisClient;
+    this._logChannel = logChannel;
+  }
+
+  async list(req, res) {
+    const query = 'SELECT * FROM todos WHERE "userId" = $1';
+    try {
+      const { rows } = await db.query(query, [req.user.username]);
+      res.json(rows);
+    } catch (error) {
+      res.status(400).send(error);
     }
+  }
 
-    // TODO: these methods are not concurrent-safe
-    list (req, res) {
-        const data = this._getTodoData(req.user.username)
+  async create(req, res) {
+    const query =
+      'INSERT INTO todos(id, text, done, "userId") VALUES($1, $2, $3, $4) returning *';
+    const values = [uuidv4(), req.body.content, false, req.user.username];
 
-        res.json(data.items)
+    try {
+      const { rows } = await db.query(query, values);
+      this._logOperation(OPERATION_CREATE, req.user.username, rows[0].id);
+      res.status(201).json(rows[0]);
+    } catch (error) {
+      res.status(400).send(error);
     }
+  }
 
-    create (req, res) {
-        // TODO: must be transactional and protected for concurrent access, but
-        // the purpose of the whole example app it's enough
-        const data = this._getTodoData(req.user.username)
-        const todo = {
-            content: req.body.content,
-            id: data.lastInsertedID
-        }
-        data.items[data.lastInsertedID] = todo
-
-        data.lastInsertedID++
-        this._setTodoData(req.user.username, data)
-
-        this._logOperation(OPERATION_CREATE, req.user.username, todo.id)
-
-        res.json(todo)
+  async delete(req, res) {
+    const query = 'DELETE FROM todos WHERE id=$1 and "userId" = $2';
+    try {
+      await db.query(query, [req.params.taskId, req.user.username]);
+      this._logOperation(
+        OPERATION_DELETE,
+        req.user.username,
+        req.params.taskId
+      );
+      res.status(204).send();
+    } catch (error) {
+      res.status(400).send(error);
     }
+  }
 
-    delete (req, res) {
-        const data = this._getTodoData(req.user.username)
-        const id = req.params.taskId
-        delete data.items[id]
-        this._setTodoData(req.user.username, data)
-
-        this._logOperation(OPERATION_DELETE, req.user.username, id)
-
-        res.status(204)
-        res.send()
-    }
-
-    _logOperation (opName, username, todoId) {
-        this._tracer.scoped(() => {
-            const traceId = this._tracer.id;
-            this._redisClient.publish(this._logChannel, JSON.stringify({
-                zipkinSpan: traceId,
-                opName: opName,
-                username: username,
-                todoId: todoId,
-            }))
+  _logOperation(opName, username, todoId) {
+    this._tracer.scoped(() => {
+      const traceId = this._tracer.id;
+      this._redisClient.publish(
+        this._logChannel,
+        JSON.stringify({
+          zipkinSpan: traceId,
+          opName: opName,
+          username: username,
+          todoId: todoId,
         })
-    }
-
-    _getTodoData (userID) {
-        var data = cache.get(userID)
-        if (data == null) {
-            data = {
-                items: {
-                    '1': {
-                        id: 1,
-                        content: "Create new todo",
-                    },
-                    '2': {
-                        id: 2,
-                        content: "Update me",
-                    },
-                    '3': {
-                        id: 3,
-                        content: "Delete example ones",
-                    }
-                },
-                lastInsertedID: 3
-            }
-
-            this._setTodoData(userID, data)
-        }
-        return data
-    }
-
-    _setTodoData (userID, data) {
-        cache.put(userID, data)
-    }
+      );
+    });
+  }
 }
 
-module.exports = TodoController
+module.exports = TodoController;

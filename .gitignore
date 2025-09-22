@@ -1,0 +1,39 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+.terraform.lock.hcl
+
+# Ignore provider plugin binaries inside .terraform
+.terraform/providers/
+
+# Node.js
+node_modules/
+dist/
+build/
+
+# Java / Maven
+target/
+*.class
+*.jar
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+
+# IDEs
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Logs and environment
+*.log
+.env
+*.tfvars
+!*.tfvars.example
+
