@@ -26,9 +26,9 @@ jobs:
           ref: ${{ inputs.sha }}
 
       - name: Log in to Azure
-        uses: azure/login@v2
+        uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }} #azure service principal:)
+          creds: ${{ secrets.AZURE_CREDENTIALS }} #azure service principal
 
       - name: Log in to ACR
         run: |
@@ -46,46 +46,16 @@ jobs:
           tags: ${{ secrets.ACR_NAME }}.azurecr.io/${{ matrix.service.name }}:${{ inputs.sha }}
 
   deploy:
+    needs: build-and-push
     runs-on: ubuntu-latest
-    environment: production
     steps:
-      - name: Validate and Check AZURE_CREDENTIALS
-        run: |
-          if [ -z "${{ secrets.AZURE_CREDENTIALS }}" ]; then
-            echo "AZURE_CREDENTIALS is not defined."
-            exit 1
-          fi
-
-          CREDS='${{ secrets.AZURE_CREDENTIALS }}'
-          if ! echo "$CREDS" | jq empty 2>/dev/null; then
-            echo "AZURE_CREDENTIALS is not valid JSON"
-            exit 1
-          fi
-
-          CLIENT_ID=$(echo "$CREDS" | jq -r '.clientId // empty')
-          TENANT_ID=$(echo "$CREDS" | jq -r '.tenantId // empty')
-          CLIENT_SECRET=$(echo "$CREDS" | jq -r '.clientSecret // empty')
-          SUBSCRIPTION_ID=$(echo "$CREDS" | jq -r '.subscriptionId // empty')
-
-          if [ -z "$CLIENT_ID" ] || [ -z "$TENANT_ID" ] || [ -z "$CLIENT_SECRET" ] || [ -z "$SUBSCRIPTION_ID" ]; then
-            echo "Missing required fields in AZURE_CREDENTIALS"
-            echo "clientId: ${CLIENT_ID:+present}"
-            echo "tenantId: ${TENANT_ID:+present}"
-            echo "clientSecret: ${CLIENT_SECRET:+present}"
-            echo "subscriptionId: ${SUBSCRIPTION_ID:+present}"
-            exit 1
-          fi
-
-          echo "AZURE_CREDENTIALS is defined and valid. All required fields are present."
-        shell: bash
-
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
           ref: ${{ inputs.sha }}
 
       - name: Log in to Azure
-        uses: azure/login@v2
+        uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
