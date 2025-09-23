@@ -83,10 +83,5 @@ jobs:
         run: |
           bash ./terraform/scripts/deploy-container-apps.sh terraform/container-apps/terraform.tfvars
           echo "\n🎉 Despliegue de Container Apps completado. Outputs:\n"
-          if command -v jq >/dev/null 2>&1; then
-            terraform output -json | jq || terraform output
-          else
-            echo "(jq no está instalado — mostrando terraform output en texto plano)"
-            terraform output
-          fi
+          terraform output
         shell: bash

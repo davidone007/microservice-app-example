@@ -57,12 +57,7 @@ echo "🔨 Aplicando plan..."
 terraform apply -input=false -auto-approve container-apps.plan
 
 echo "\n🎉 Despliegue de Container Apps completado. Outputs:\n"
-if command -v jq >/dev/null 2>&1; then
-  terraform output -json | jq
-else
-  echo "(jq no está instalado — mostrando terraform output en texto plano)"
-  terraform output
-fi
+terraform output
 
 cat <<'EOF'
 
