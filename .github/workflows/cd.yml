@@ -1,19 +1,14 @@
 name: CD - Deploy to Azure
 
 on:
-  workflow_run:
-    workflows: ["CI - Build Docker Images"]
-    types:
-      - completed
-    branches:
-      - main
-      - develop
-      - ops/feature/pipelines
+  workflow_call:
+    inputs:
+      sha:
+        required: true
+        type: string
 
 jobs:
   build-and-push:
-    # Este job solo se ejecuta si el workflow de CI fue exitoso
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -28,8 +23,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          # Necesitamos hacer fetch del commit específico que disparó el CI
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ inputs.sha }}
 
       - name: Log in to Azure Container Registry
         uses: docker/login-action@v2
@@ -47,7 +41,7 @@ jobs:
           context: ${{ matrix.service.path }}
           file: ${{ matrix.service.path }}/Dockerfile
           push: true
-          tags: ${{ secrets.ACR_LOGIN_SERVER }}/${{ matrix.service.name }}:${{ github.event.workflow_run.head_sha }}
+          tags: ${{ secrets.ACR_LOGIN_SERVER }}/${{ matrix.service.name }}:${{ inputs.sha }}
 
   deploy:
     needs: build-and-push
@@ -56,7 +50,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ inputs.sha }}
 
       - name: Log in to Azure
         uses: azure/login@v1
@@ -68,7 +62,7 @@ jobs:
 
       - name: Create .tfvars file for deployment
         run: |
-          IMAGE_TAG=${{ github.event.workflow_run.head_sha }}
+          IMAGE_TAG=${{ inputs.sha }}
           SUB_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r .subscriptionId)
 
           echo "subscription_id = \"$SUB_ID\"" > terraform/container-apps/terraform.tfvars

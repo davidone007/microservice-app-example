@@ -11,6 +11,7 @@ on:
       - main
       - develop
       - ops/feature/pipelines
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -48,3 +49,9 @@ jobs:
           file: ${{ matrix.service.path }}/Dockerfile
           push: false # Only build, don't push yet
           tags: ghcr.io/${{ github.repository_owner }}/${{ matrix.service.name }}:${{ github.sha }}
+
+  trigger-cd:
+    needs: build-and-test
+    uses: ./.github/workflows/cd.yml
+    with:
+      sha: ${{ github.sha }}
