@@ -54,6 +54,28 @@ jobs:
         with:
           ref: ${{ inputs.sha }}
 
+      - name: Validate Azure Credentials
+        run: |
+          CREDS='${{ secrets.AZURE_CREDENTIALS }}'
+          if ! echo "$CREDS" | jq empty 2>/dev/null; then
+            echo "AZURE_CREDENTIALS is not valid JSON"
+            exit 1
+          fi
+          CLIENT_ID=$(echo "$CREDS" | jq -r '.clientId // empty')
+          TENANT_ID=$(echo "$CREDS" | jq -r '.tenantId // empty')
+          CLIENT_SECRET=$(echo "$CREDS" | jq -r '.clientSecret // empty')
+          SUBSCRIPTION_ID=$(echo "$CREDS" | jq -r '.subscriptionId // empty')
+          if [ -z "$CLIENT_ID" ] || [ -z "$TENANT_ID" ] || [ -z "$CLIENT_SECRET" ] || [ -z "$SUBSCRIPTION_ID" ]; then
+            echo "Missing required fields in AZURE_CREDENTIALS"
+            echo "clientId: ${CLIENT_ID:+present}"
+            echo "tenantId: ${TENANT_ID:+present}"
+            echo "clientSecret: ${CLIENT_SECRET:+present}"
+            echo "subscriptionId: ${SUBSCRIPTION_ID:+present}"
+            exit 1
+          fi
+          echo "All required fields are present"
+        shell: bash
+
       - name: Log in to Azure
         uses: azure/login@v2
         with:
