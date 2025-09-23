@@ -49,11 +49,6 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ inputs.sha }}
-
       - name: Validate Azure Credentials
         run: |
           CREDS='${{ secrets.AZURE_CREDENTIALS }}'
@@ -75,6 +70,11 @@ jobs:
           fi
           echo "All required fields are present"
         shell: bash
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.sha }}
 
       - name: Log in to Azure
         uses: azure/login@v2
