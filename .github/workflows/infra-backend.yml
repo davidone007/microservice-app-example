@@ -2,6 +2,14 @@ name: Infra - Terraform Backend
 
 on:
   push:
+    branches:
+      - main
+    paths:
+      - "terraform/terraform-backend/**"
+      - ".github/workflows/infra-backend.yml"
+  pull_request:
+    branches:
+      - main
     paths:
       - "terraform/terraform-backend/**"
       - ".github/workflows/infra-backend.yml"

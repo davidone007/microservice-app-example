@@ -2,6 +2,14 @@ name: Infra - Base Infrastructure
 
 on:
   push:
+    branches:
+      - main
+    paths:
+      - "terraform/base-infrastructure/**"
+      - ".github/workflows/infra-base.yml"
+  pull_request:
+    branches:
+      - main
     paths:
       - "terraform/base-infrastructure/**"
       - ".github/workflows/infra-base.yml"

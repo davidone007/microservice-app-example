@@ -2,15 +2,8 @@ name: CI - Build Docker Images
 
 on:
   push:
-    branches:
-      - main
-      - develop
-      - ops/feature/pipelines
+
   pull_request:
-    branches:
-      - main
-      - develop
-      - ops/feature/pipelines
 
 jobs:
   build-and-test:
@@ -57,3 +50,6 @@ jobs:
     with:
       sha: ${{ github.sha }}
     secrets: inherit
+    if: |
+      (github.event_name == 'push' || github.event_name == 'pull_request') &&
+      github.ref == 'refs/heads/main'
