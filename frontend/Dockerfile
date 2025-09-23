@@ -25,4 +25,4 @@ RUN rm -f /etc/nginx/conf.d/default.conf
 
 # CMD que especifica EXACTAMENTE qué variables reemplazar (VERSIÓN CORREGIDA)
 # Esta línea ha sido limpiada para evitar caracteres ocultos.
-CMD ["/bin/sh", "-c", "envsubst '${AUTH_HOST} ${AUTH_API_PORT} ${TODOS_API_HOST} ${TODO_API_PORT}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+CMD ["/bin/sh", "-c", "envsubst '${AUTH_HOST} ${AUTH_API_PORT} ${TODOS_API_HOST} ${TODO_API_PORT} ${ZIPKIN_HOST} ${ZIPKIN_PORT}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]

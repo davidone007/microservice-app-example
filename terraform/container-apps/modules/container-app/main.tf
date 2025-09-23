@@ -10,9 +10,13 @@ resource "azurerm_container_app" "main" {
   identity {
     type = "SystemAssigned"
   }
-  secret {
-    name  = "acr-password"
-    value = var.acr_admin_password
+
+  dynamic "secret" {
+    for_each = !var.is_public_image && var.acr_admin_password != null ? { "acr-password" = var.acr_admin_password } : {}
+    content {
+      name  = secret.key
+      value = secret.value
+    }
   }
 
    # Itera sobre los secretos pasados como variable
@@ -24,10 +28,13 @@ resource "azurerm_container_app" "main" {
     }
   }
 
-  registry {
-    server               = split("/", var.image_name)[0]
-    username             = var.acr_admin_username
-    password_secret_name = "acr-password"
+  dynamic "registry" {
+    for_each = !var.is_public_image ? [1] : []
+    content {
+      server               = split("/", var.image_name)[0]
+      username             = var.acr_admin_username
+      password_secret_name = "acr-password"
+    }
   }
 
   template {

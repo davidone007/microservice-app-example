@@ -16,12 +16,6 @@ variable "acr_name" {
   default     = "microservicesacr20250920"
 }
 
-variable "redis_name" {
-  description = "Nombre de la instancia de Azure Cache for Redis."
-  type        = string
-  default     = "msapp-redis-20250920"
-}
-
 variable "key_vault_name" {
   description = "Nombre del Azure Key Vault."
   type        = string
@@ -58,25 +52,3 @@ variable "key_vault_secrets" {
   }
 }
 
-variable "db_server_name" {
-  description = "The name of the PostgreSQL server."
-  type        = string
-  default     = "microservices-db-server-taller"
-}
-
-variable "db_name" {
-  description = "The name of the PostgreSQL database."
-  type        = string
-  default     = "todos_db"
-}
-
-variable "db_admin_username" {
-  description = "The admin username for the PostgreSQL server."
-  type        = string
-}
-
-variable "db_admin_password" {
-  description = "The admin password for the PostgreSQL server."
-  type        = string
-  sensitive   = true
-}

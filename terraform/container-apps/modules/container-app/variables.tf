@@ -10,6 +10,7 @@ variable "container_app_environment_id" {
 variable "acr_admin_username" {
   type      = string
   sensitive = true
+  default   = null
 }
 variable "acr_admin_password" {
   type      = string
@@ -71,4 +72,9 @@ variable "scale" {
     })), [])
   })
   default = null
+}
+
+variable "is_public_image" {
+  type    = bool
+  default = false
 }

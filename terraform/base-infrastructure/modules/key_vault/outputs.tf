@@ -5,7 +5,4 @@ output "jwt_secret_uri" {
   value       = azurerm_key_vault_secret.jwt_secret.id
 }
 
-output "postgresql_admin_password_uri" {
-  description = "The URI of the PostgreSQL admin password secret in Key Vault."
-  value       = azurerm_key_vault_secret.db_password.id
-}
+
