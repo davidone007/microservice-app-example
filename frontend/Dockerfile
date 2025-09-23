@@ -1,22 +1,28 @@
-# frontend/Dockerfile
-FROM node:8-alpine
+# Etapa de construcción (Build Stage)
+# Usamos Node 14 que es más compatible con dependencias antiguas como node-sass@4.x
+FROM node:14-alpine as build-stage
+
+# Instalamos las dependencias necesarias para compilar node-sass en Alpine Linux
+RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
-
-# Copiar package.json
 COPY package*.json ./
-
-# Instalar dependencias
 RUN npm install
-
-# Copiar código fuente
 COPY . .
+RUN npm run build
 
-# Exponer puerto
-EXPOSE 8080
+# Etapa final (Final Stage)
+FROM nginx:alpine
 
-# Variables de entorno
-ENV PORT=8080
+# Copia tu archivo de configuración de Nginx como una plantilla.
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 
-# Comando para ejecutar
-CMD ["npm", "start"]
+# Copia los archivos estáticos desde la etapa de construcción
+COPY --from=build-stage /app/dist /usr/share/nginx/html
+
+# Elimina la configuración por defecto de Nginx
+RUN rm -f /etc/nginx/conf.d/default.conf
+
+# CMD que especifica EXACTAMENTE qué variables reemplazar (VERSIÓN CORREGIDA)
+# Esta línea ha sido limpiada para evitar caracteres ocultos.
+CMD ["/bin/sh", "-c", "envsubst '${AUTH_HOST} ${AUTH_API_PORT} ${TODOS_API_HOST} ${TODO_API_PORT}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]

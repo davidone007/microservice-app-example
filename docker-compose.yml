@@ -17,14 +17,14 @@ services:
     image: postgres:15-alpine
     environment:
       POSTGRES_DB: usersdb
-      POSTGRES_USER: usersuser
+      POSTGRES_USER: dbadmin
       POSTGRES_PASSWORD: userspass
     ports:
       - "5432:5432"
     networks:
       - microservices-network
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "usersuser"]
+      test: ["CMD", "pg_isready", "-U", "dbadmin", "-d", "usersdb"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -38,7 +38,7 @@ services:
       - JWT_SECRET=PRFT
       - SERVER_PORT=8083
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/usersdb
-      - SPRING_DATASOURCE_USERNAME=usersuser
+      - SPRING_DATASOURCE_USERNAME=dbadmin
       - SPRING_DATASOURCE_PASSWORD=userspass
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - ZIPKIN_URL=http://zipkin:9411/api/v2/spans
@@ -126,14 +126,19 @@ services:
 
   # Frontend (Vue.js)
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "8080:80"
     environment:
       - PORT=8080
-      - AUTH_API_ADDRESS=http://auth-api:8000
-      - TODOS_API_ADDRESS=http://todos-api:8082
-      - ZIPKIN_URL=http://zipkin:9411/api/v2/spans
+      - AUTH_API_PORT=8000
+      - AUTH_HOST=auth-api
+      - TODO_API_PORT=8082
+      - TODOS_API_HOST=todos-api
+      - ZIPKIN_PORT=9411/api/v2/spans
+      - ZIPKIN_HOST=zipkin
     networks:
       - microservices-network
     depends_on:

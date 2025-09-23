@@ -55,8 +55,9 @@ variable "env" {
 }
 
 variable "secrets" {
-  type    = map(string)
-  default = {}
+  description = "A map of secrets to be created in the container app. The key is the secret name and the value is the Key Vault secret URI."
+  type        = map(string)
+  default     = {}
 }
 
 variable "scale" {

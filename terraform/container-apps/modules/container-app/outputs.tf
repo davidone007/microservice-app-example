@@ -7,3 +7,13 @@ output "principal_id" {
   description = "The principal ID of the system assigned identity of the Container App."
   value       = azurerm_container_app.main.identity[0].principal_id
 }
+
+output "identity_tenant_id" {
+  description = "The tenant ID of the system assigned identity."
+  value       = azurerm_container_app.main.identity[0].tenant_id
+}
+
+output "identity_principal_id" {
+  description = "The principal ID of the system assigned identity."
+  value       = azurerm_container_app.main.identity[0].principal_id
+}

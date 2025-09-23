@@ -82,3 +82,13 @@ output "redis_url" {
   value       = "redis://${module.redis.hostname}:${module.redis.ssl_port}"
   sensitive   = true
 }
+
+output "jwt_secret_uri" {
+  description = "The URI of the JWT secret in Key Vault."
+  value       = module.key_vault.jwt_secret_uri
+}
+
+output "postgresql_admin_password_uri" {
+  description = "The URI of the PostgreSQL admin password secret in Key Vault."
+  value       = module.key_vault.postgresql_admin_password_uri
+}
