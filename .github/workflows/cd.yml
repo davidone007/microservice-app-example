@@ -2,7 +2,7 @@ name: CD - Deploy to Azure
 
 on:
   workflow_run:
-    workflows: ["CI - Build, Test, and Push Docker Images"]
+    workflows: ["CI - Build Docker Images"]
     types:
       - completed
     branches:
