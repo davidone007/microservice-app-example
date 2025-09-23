@@ -46,7 +46,6 @@ jobs:
           tags: ${{ secrets.ACR_NAME }}.azurecr.io/${{ matrix.service.name }}:${{ inputs.sha }}
 
   deploy:
-    needs: build-and-push
     runs-on: ubuntu-latest
     steps:
       - name: Validate Azure Credentials
