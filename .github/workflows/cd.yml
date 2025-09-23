@@ -70,6 +70,16 @@ jobs:
           echo "All required fields are present"
         shell: bash
 
+      - name: Check if AZURE_CREDENTIALS is defined
+        run: |
+          if [ -z "${{ secrets.AZURE_CREDENTIALS }}" ]; then
+            echo "AZURE_CREDENTIALS is not defined."
+            exit 1
+          else
+            echo "AZURE_CREDENTIALS is defined."
+          fi
+        shell: bash
+
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
