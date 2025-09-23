@@ -13,11 +13,11 @@ jobs:
     strategy:
       matrix:
         service:
-          - { name: 'auth-api', path: './auth-api' }
-          - { name: 'todos-api', path: './todos-api' }
-          - { name: 'users-api', path: './users-api' }
-          - { name: 'frontend', path: './frontend' }
-          - { name: 'log-message-processor', path: './log-message-processor' }
+          - { name: "auth-api", path: "./auth-api" }
+          - { name: "todos-api", path: "./todos-api" }
+          - { name: "users-api", path: "./users-api" }
+          - { name: "frontend", path: "./frontend" }
+          - { name: "log-message-processor", path: "./log-message-processor" }
 
     steps:
       - name: Checkout repository
@@ -28,7 +28,7 @@ jobs:
       - name: Log in to Azure
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }} #azure service principa
+          creds: ${{ secrets.AZURE_CREDENTIALS }} #azure service principal
 
       - name: Log in to ACR
         run: |
