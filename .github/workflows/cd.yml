@@ -48,17 +48,24 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Validate Azure Credentials
+      - name: Validate and Check AZURE_CREDENTIALS
         run: |
+          if [ -z "${{ secrets.AZURE_CREDENTIALS }}" ]; then
+            echo "AZURE_CREDENTIALS is not defined."
+            exit 1
+          fi
+
           CREDS='${{ secrets.AZURE_CREDENTIALS }}'
           if ! echo "$CREDS" | jq empty 2>/dev/null; then
             echo "AZURE_CREDENTIALS is not valid JSON"
             exit 1
           fi
+
           CLIENT_ID=$(echo "$CREDS" | jq -r '.clientId // empty')
           TENANT_ID=$(echo "$CREDS" | jq -r '.tenantId // empty')
           CLIENT_SECRET=$(echo "$CREDS" | jq -r '.clientSecret // empty')
           SUBSCRIPTION_ID=$(echo "$CREDS" | jq -r '.subscriptionId // empty')
+
           if [ -z "$CLIENT_ID" ] || [ -z "$TENANT_ID" ] || [ -z "$CLIENT_SECRET" ] || [ -z "$SUBSCRIPTION_ID" ]; then
             echo "Missing required fields in AZURE_CREDENTIALS"
             echo "clientId: ${CLIENT_ID:+present}"
@@ -67,17 +74,8 @@ jobs:
             echo "subscriptionId: ${SUBSCRIPTION_ID:+present}"
             exit 1
           fi
-          echo "All required fields are present"
-        shell: bash
 
-      - name: Check if AZURE_CREDENTIALS is defined
-        run: |
-          if [ -z "${{ secrets.AZURE_CREDENTIALS }}" ]; then
-            echo "AZURE_CREDENTIALS is not defined."
-            exit 1
-          else
-            echo "AZURE_CREDENTIALS is defined."
-          fi
+          echo "AZURE_CREDENTIALS is defined and valid. All required fields are present."
         shell: bash
 
       - name: Checkout repository
