@@ -43,7 +43,7 @@ jobs:
           context: ${{ matrix.service.path }}
           file: ${{ matrix.service.path }}/Dockerfile
           push: true
-          tags: ${{ secrets.ACR_NAME }}.azurecr.io/${{ matrix.service.name }}:${{ inputs.sha }}
+          tags: ${{ secrets.ACR_NAME }}.azurecr.io/${{ matrix.service.name }}:latest
 
   deploy:
     needs: build-and-push
@@ -82,4 +82,11 @@ jobs:
           ARM_ACCESS_KEY: ${{ secrets.ARM_ACCESS_KEY }}
         run: |
           bash ./terraform/scripts/deploy-container-apps.sh terraform/container-apps/terraform.tfvars
+          echo "\n🎉 Despliegue de Container Apps completado. Outputs:\n"
+          if command -v jq >/dev/null 2>&1; then
+            terraform output -json | jq || terraform output
+          else
+            echo "(jq no está instalado — mostrando terraform output en texto plano)"
+            terraform output
+          fi
         shell: bash

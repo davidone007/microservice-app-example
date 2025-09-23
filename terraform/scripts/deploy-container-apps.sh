@@ -66,8 +66,5 @@ fi
 
 cat <<'EOF'
 
-Siguientes pasos recomendados:
- - Verifica que las aplicaciones estén corriendo correctamente en el Portal de Azure.
- - Usa los outputs para acceder a las URLs de tus aplicaciones.
 
 EOF
