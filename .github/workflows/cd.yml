@@ -74,6 +74,7 @@ jobs:
           echo "  \"users-api\"             = \"$IMAGE_TAG\"," >> terraform/container-apps/terraform.tfvars
           echo "  \"frontend\"              = \"$IMAGE_TAG\"," >> terraform/container-apps/terraform.tfvars
           echo "  \"log-message-processor\" = \"$IMAGE_TAG\"" >> terraform/container-apps/terraform.tfvars
+          echo "  \"zipkin\"                 = \"$IMAGE_TAG\"" >> terraform/container-apps/terraform.tfvars
           echo "}" >> terraform/container-apps/terraform.tfvars
         shell: bash
 
