@@ -45,9 +45,18 @@ module "frontend" {
       }
     ]
   }
-  target_port      = 8080
+  target_port      = 80
   is_external      = true
   tags             = var.tags
+  env = [
+    { name = "PORT",           value = "80" },
+    { name = "AUTH_API_PORT",  value = "80" },
+    { name = "AUTH_HOST",      value = "auth-api" },
+    { name = "TODO_API_PORT",  value = "80" },
+    { name = "TODOS_API_HOST", value = "todos-api" },
+    { name = "ZIPKIN_PORT",    value = "80/api/v2/spans" },
+    { name = "ZIPKIN_HOST",    value = "zipkin" }
+  ]
   acr_admin_username = data.terraform_remote_state.base.outputs.acr_admin_username
   acr_admin_password = data.terraform_remote_state.base.outputs.acr_admin_password
 }
@@ -75,7 +84,15 @@ module "todos_api" {
     ]
   }
   target_port      = 8082
-  is_external      = false
+  is_external      = true
+  env = [
+    { name = "JWT_SECRET",     value = "PRFT" },
+    { name = "TODO_API_PORT",  value = "8082" },
+    { name = "REDIS_HOST",     value = "redis" },
+    { name = "REDIS_PORT",     value = "6379" },
+    { name = "REDIS_CHANNEL",  value = "log_channel" },
+    { name = "ZIPKIN_URL",     value = "http://zipkin:80/api/v2/spans" }
+  ]
   tags             = var.tags
   acr_admin_username = data.terraform_remote_state.base.outputs.acr_admin_username
   acr_admin_password = data.terraform_remote_state.base.outputs.acr_admin_password
@@ -87,8 +104,8 @@ module "users_api" {
   resource_group_name          = data.terraform_remote_state.base.outputs.resource_group_name
   container_app_environment_id = module.container_app_env.id
   image_name                   = "${data.terraform_remote_state.base.outputs.acr_login_server}/users-api:latest"
-  cpu                          = 0.5
-  memory                       = "1.0Gi"
+  cpu                          = 1.0
+  memory                       = "2.0Gi"
   scale = {
     min_replicas = 1
     max_replicas = 5
@@ -104,24 +121,23 @@ module "users_api" {
     ]
   }
   target_port = 8083
-  is_external = false
+  is_external = true
   env = [
     {
-      name  = "SPRING_DATASOURCE_URL"
-      value = "jdbc:postgresql://${data.terraform_remote_state.base.outputs.postgresql_server_name}.postgres.database.azure.com:5432/users?sslmode=require"
+      name  = "SERVER_PORT"
+      value = "8083"
+    },
+    { name = "JWT_SECRET",
+      value = "PRFT"
+    },
+    { name = "ZIPKIN_URL",
+      value = "http://zipkin:80/api/v2/spans"
     },
     {
-      name  = "SPRING_DATASOURCE_USERNAME"
-      value = data.terraform_remote_state.base.outputs.postgresql_admin_username
+      name  = "SPRING_PROFILES_ACTIVE"
+      value = "prod"
     },
-    {
-      name  = "SPRING_DATASOURCE_PASSWORD"
-      value = data.terraform_remote_state.base.outputs.postgresql_admin_password
-    },
-    {
-      name  = "SPRING_JPA_HIBERNATE_DDL_AUTO"
-      value = "update"
-    }
+    
   ]
   tags               = var.tags
   acr_admin_username = data.terraform_remote_state.base.outputs.acr_admin_username
@@ -150,13 +166,15 @@ module "auth_api" {
       }
     ]
   }
-  target_port = 8081
-  is_external = false
+  target_port = 8000
+  is_external = true
   env = [
-    {
-      name  = "REDIS_URL"
-      value = data.terraform_remote_state.base.outputs.redis_url
-    }
+    { name = "JWT_SECRET",        value = "PRFT" },
+    { name = "AUTH_API_PORT",     value = "8000" },
+    { name = "USERS_API_ADDRESS", value = "http://users-api:80" },
+    { name = "ZIPKIN_URL",        value = "http://zipkin:80/api/v2/spans" },
+    { name = "REDIS_HOST",        value = "redis" },
+    { name = "REDIS_PORT",        value = "6379" }
   ]
   tags               = var.tags
   acr_admin_username = data.terraform_remote_state.base.outputs.acr_admin_username
@@ -186,8 +204,46 @@ module "log_message_processor" {
     ]
   }
   target_port        = 8084
-  is_external        = false
+  is_external        = true
+  env = [
+    { name = "REDIS_HOST",    value = "redis" },
+    { name = "REDIS_PORT",    value = "6379" },
+    { name = "REDIS_CHANNEL", value = "log_channel" },
+    { name = "PYTHONUNBUFFERED", value = "1" },
+    { name = "ZIPKIN_URL",    value = "http://zipkin:80/api/v2/spans" }
+  ]
   tags               = var.tags
   acr_admin_username = data.terraform_remote_state.base.outputs.acr_admin_username
   acr_admin_password = data.terraform_remote_state.base.outputs.acr_admin_password
+}
+
+module "zipkin" {
+  source                       = "./modules/container-app"
+  name                         = "zipkin"
+  resource_group_name          = data.terraform_remote_state.base.outputs.resource_group_name
+  container_app_environment_id = module.container_app_env.id
+  image_name                   = "${data.terraform_remote_state.base.outputs.acr_login_server}/zipkin:latest"
+  cpu                          = 0.25
+  memory                       = "0.5Gi"
+  target_port                  = 9411
+  is_external                  = true
+  tags                         = var.tags
+  acr_admin_username           = data.terraform_remote_state.base.outputs.acr_admin_username
+  acr_admin_password           = data.terraform_remote_state.base.outputs.acr_admin_password
+}
+
+module "redis" {
+  source                       = "./modules/container-app"
+  name                         = "redis"
+  resource_group_name          = data.terraform_remote_state.base.outputs.resource_group_name
+  container_app_environment_id = module.container_app_env.id
+  image_name                   = "redis:7-alpine" # Using public image for Redis
+  cpu                          = 0.25
+  memory                       = "0.5Gi"
+  target_port                  = 6379
+  is_external                  = false # Internal service
+  is_public_image              = true
+  tags                         = var.tags
+  acr_admin_username           = data.terraform_remote_state.base.outputs.acr_admin_username
+  acr_admin_password           = data.terraform_remote_state.base.outputs.acr_admin_password
 }

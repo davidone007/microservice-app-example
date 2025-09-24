@@ -61,24 +61,9 @@ output "container_apps_subnet_id" {
   value       = module.networking.subnet_ids["container-apps-subnet"]
 }
 
-output "postgresql_server_name" {
-  description = "Nombre del servidor de PostgreSQL."
-  value       = module.postgresql.db_server_name
+
+output "jwt_secret_uri" {
+  description = "The URI of the JWT secret in Key Vault."
+  value       = module.key_vault.jwt_secret_uri
 }
 
-output "postgresql_admin_username" {
-  description = "Usuario administrador de PostgreSQL."
-  value       = module.postgresql.db_admin_username
-}
-
-output "postgresql_admin_password" {
-  description = "Contraseña del administrador de PostgreSQL."
-  value       = module.postgresql.db_admin_password
-  sensitive   = true
-}
-
-output "redis_url" {
-  description = "URL de conexión a Redis."
-  value       = "redis://${module.redis.hostname}:${module.redis.ssl_port}"
-  sensitive   = true
-}

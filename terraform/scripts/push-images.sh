@@ -9,7 +9,7 @@ set -e
 ACR_LOGIN_SERVER="microservicesacr20250920.azurecr.io"
 
 # Lista de servicios a construir y subir. Los nombres de directorio deben coincidir.
-SERVICES=("auth-api" "frontend" "log-message-processor" "todos-api" "users-api")
+SERVICES=("auth-api" "frontend" "log-message-processor" "todos-api" "users-api" "zipkin")
 
 # --- Lógica del Script ---
 

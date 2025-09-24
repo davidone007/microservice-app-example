@@ -7,19 +7,34 @@ resource "azurerm_container_app" "main" {
   revision_mode                = "Single"
   tags                         = var.tags
 
-  secret {
-    name  = "acr-password"
-    value = var.acr_admin_password
-  }
-
-  registry {
-    server               = split("/", var.image_name)[0]
-    username             = var.acr_admin_username
-    password_secret_name = "acr-password"
-  }
-
   identity {
     type = "SystemAssigned"
+  }
+
+  dynamic "secret" {
+    for_each = !var.is_public_image && var.acr_admin_password != null ? { "acr-password" = var.acr_admin_password } : {}
+    content {
+      name  = secret.key
+      value = secret.value
+    }
+  }
+
+   # Itera sobre los secretos pasados como variable
+  dynamic "secret" {
+    for_each = var.secrets
+    content {
+      name                  = secret.key
+      value                 = secret.value
+    }
+  }
+
+  dynamic "registry" {
+    for_each = !var.is_public_image ? [1] : []
+    content {
+      server               = split("/", var.image_name)[0]
+      username             = var.acr_admin_username
+      password_secret_name = "acr-password"
+    }
   }
 
   template {
@@ -72,14 +87,6 @@ resource "azurerm_container_app" "main" {
     traffic_weight {
       percentage      = 100
       latest_revision = true
-    }
-  }
-
-  dynamic "secret" {
-    for_each = var.secrets
-    content {
-      name                = lower(replace(secret.key, "_", "-"))
-      key_vault_secret_id = secret.value
     }
   }
 }

@@ -10,6 +10,7 @@ variable "container_app_environment_id" {
 variable "acr_admin_username" {
   type      = string
   sensitive = true
+  default   = null
 }
 variable "acr_admin_password" {
   type      = string
@@ -55,8 +56,9 @@ variable "env" {
 }
 
 variable "secrets" {
-  type    = map(string)
-  default = {}
+  description = "A map of secrets to be created in the container app. The key is the secret name and the value is the Key Vault secret URI."
+  type        = map(string)
+  default     = {}
 }
 
 variable "scale" {
@@ -70,4 +72,9 @@ variable "scale" {
     })), [])
   })
   default = null
+}
+
+variable "is_public_image" {
+  type    = bool
+  default = false
 }

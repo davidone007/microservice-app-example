@@ -40,15 +40,6 @@ module "acr" {
   tags                = var.tags
 }
 
-module "redis" {
-  source              = "./modules/redis"
-  name                = var.redis_name
-  resource_group_name = module.resource_group.name
-  location            = module.resource_group.location
-  subnet_id           = module.networking.subnet_ids["redis-subnet"]
-  tags                = var.tags
-}
-
 module "key_vault" {
   source                          = "./modules/key_vault"
   name                            = "${var.key_vault_name}-${random_integer.suffix.result}"
@@ -58,24 +49,5 @@ module "key_vault" {
   object_id                       = data.azurerm_client_config.current.object_id
   tags                            = var.tags
   jwt_secret                      = var.jwt_secret
-  db_admin_password               = var.db_admin_password
-  redis_primary_connection_string = module.redis.primary_connection_string
-  redis_hostname                  = module.redis.hostname
-  redis_ssl_port                  = module.redis.ssl_port
-  redis_primary_access_key        = module.redis.primary_access_key
-  postgresql_db_server_name       = module.postgresql.db_server_name
-  postgresql_db_name              = module.postgresql.db_name
-  postgresql_db_admin_username    = module.postgresql.db_admin_username
 }
 
-module "postgresql" {
-  source              = "./modules/postgresql"
-  db_server_name      = var.db_server_name
-  location            = module.resource_group.location
-  resource_group_name = module.resource_group.name
-  db_admin_username   = var.db_admin_username
-  db_admin_password   = var.db_admin_password
-  db_name             = var.db_name
-  delegated_subnet_id = module.networking.subnet_ids["postgresql-subnet"]
-  virtual_network_id  = module.networking.vnet_id
-}
