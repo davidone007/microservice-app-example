@@ -33,7 +33,7 @@ cd "$TF_DIR_ABS"
 RESOURCE_GROUP="microservices-rg"
 LOCATION="centralus"
 ACR_NAME="microservicesacr20250920"
-KEY_VAULT_NAME="msapp-kv-20250920-3918"
+KEY_VAULT_NAME="msapp-kv-20250920"
 LOG_ANALYTICS_NAME="microservices-log-analytics"
 
 echo "📦 Inicializando Terraform en $TF_DIR_ABS..."
