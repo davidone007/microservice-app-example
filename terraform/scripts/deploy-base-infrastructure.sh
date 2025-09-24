@@ -30,33 +30,27 @@ TF_DIR_ABS=$(cd "$TF_DIR" && pwd)
 echo "📁 Directorio objetivo: $TF_DIR_ABS"
 cd "$TF_DIR_ABS"
 
-# Detect var-file (priority: TF_VAR_FILE env, CLI arg, module-local terraform.tfvars)
-VAR_FILE_ARG=""
-CLI_VARFILE_ARG="${1:-}"
-if [ -n "${TF_VAR_FILE:-}" ] && [ -f "$TF_VAR_FILE" ]; then
-  VAR_FILE_ARG="-var-file=$TF_VAR_FILE"
-  echo "🔐 Usando archivo de variables desde TF_VAR_FILE: $TF_VAR_FILE"
-elif [ -n "$CLI_VARFILE_ARG" ] && [ -f "$CLI_VARFILE_ARG" ]; then
-  VAR_FILE_ARG="-var-file=$CLI_VARFILE_ARG"
-  echo "🔐 Usando archivo de variables desde argumento: $CLI_VARFILE_ARG"
-elif [ -f "terraform.tfvars" ]; then
-  VAR_FILE_ARG="-var-file=terraform.tfvars"
-  echo "🔐 Usando archivo de variables local del módulo: terraform.tfvars"
-else
-  echo "❗ No se encontró archivo de variables. Para valores sensibles (db password, jwt secret) crea 'terraform.tfvars' en el módulo o usa TF_VAR_FILE." >&2
-  exit 1
-fi
+RESOURCE_GROUP="microservices-rg"
+LOCATION="centralus"
+ACR_NAME="microservicesacr20250920"
+KEY_VAULT_NAME="msapp-kv-20250920"
+LOG_ANALYTICS_NAME="microservices-log-analytics"
 
 echo "📦 Inicializando Terraform en $TF_DIR_ABS..."
 terraform init
 
 echo "📋 Creando plan de Terraform..."
-terraform plan -out=tfplan -input=false $VAR_FILE_ARG
+terraform plan -out=tfplan -input=false \
+  -var="resource_group_name=$RESOURCE_GROUP" \
+  -var="location=$LOCATION" \
+  -var="acr_name=$ACR_NAME" \
+  -var="key_vault_name=$KEY_VAULT_NAME" \
+  -var="log_analytics_name=$LOG_ANALYTICS_NAME"
 
 echo "🔨 Aplicando plan..."
 terraform apply -input=false -auto-approve tfplan
 
-echo "\n🎉 Despliegue de base-infrastructure completado. Outputs:\n"
+echo -e "\n🎉 Despliegue de base-infrastructure completado. Outputs:\n"
 if command -v jq >/dev/null 2>&1; then
   terraform output -json | jq
 else
@@ -68,6 +62,6 @@ cat <<'EOF'
 
 Siguientes pasos recomendados:
  - Usa los outputs (acr_login_server, key_vault_uri, etc.) para configurar y desplegar las aplicaciones.
- - Para seguridad, no cometas el archivo 'terraform.tfvars' que contiene secretos.
+ - Mantén los secretos sensibles fuera del repo, usa GitHub Secrets si los necesitas en el pipeline.
 
 EOF
