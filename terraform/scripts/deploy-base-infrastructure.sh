@@ -54,7 +54,7 @@ echo -e "\n🎉 Despliegue de base-infrastructure completado. Outputs:\n"
 if command -v jq >/dev/null 2>&1; then
   terraform output -json | jq
 else
-  echo "(jq no está instalado — mostrando terraform output en texto plano)"
+  echo " (jq no está instalado — mostrando terraform output en texto plano)"
   terraform output
 fi
 
