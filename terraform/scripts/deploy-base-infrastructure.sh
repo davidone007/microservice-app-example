@@ -51,17 +51,15 @@ echo "🔨 Aplicando plan..."
 terraform apply -input=false -auto-approve tfplan
 
 echo -e "\n🎉 Despliegue de base-infrastructure completado. Outputs:\n"
+# Mostrar outputs de forma segura
 if command -v jq >/dev/null 2>&1; then
-  terraform output -json | jq
+  if terraform output -json | jq .; then
+    echo "✅ Outputs parseados correctamente"
+  else
+    echo "⚠️ No se pudieron formatear los outputs, mostrando en texto plano:"
+    terraform output
+  fi
 else
-  echo " (jq no está instalado — mostrando terraform output en texto plano)"
+  echo "⚠️ jq no está instalado. Mostrando outputs en texto plano:"
   terraform output
 fi
-
-cat <<'EOF'
-
-Siguientes pasos recomendados:
- - Usa los outputs (acr_login_server, key_vault_uri, etc.) para configurar y desplegar las aplicaciones.
- - Mantén los secretos sensibles fuera del repo, usa GitHub Secrets si los necesitas en el pipeline.
-
-EOF
