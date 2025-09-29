@@ -29,6 +29,25 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
+      - name: Create .tfvars file for deployment
+        run: |
+          SUB_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r .subscriptionId)
+
+          cat > terraform/container-apps/terraform.tfvars <<EOF
+          subscription_id = "$SUB_ID"
+          # 👇 acá metés lo que tu módulo de container-apps realmente necesite
+          acr_name        = "${{ secrets.ACR_NAME }}"
+          key_vault_name  = "msapp-kv-20250920"
+          location        = "centralus"
+          resource_group  = "microservices-rg"
+          EOF
+        shell: bash
+
       - name: Run Terraform to deploy Container Apps
-        run: bash ./terraform/scripts/deploy-container-apps.sh
+        env:
+          ARM_ACCESS_KEY: ${{ secrets.ARM_ACCESS_KEY }}
+        run: |
+          bash ./terraform/scripts/deploy-container-apps.sh terraform/container-apps/terraform.tfvars
+          echo "\n🎉 Despliegue de Container Apps completado. Outputs:\n"
+          terraform output
         shell: bash
