@@ -31,7 +31,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Docker build steps (for all services good)
+      # 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
