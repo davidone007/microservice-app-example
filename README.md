@@ -606,7 +606,7 @@ Más detalles en: [`docs/metodologia_y_branching.md`](docs/metodologia_y_branchi
 
 1. **Clonar repositorio**:
 ```bash
-git clone https://github.com/tu-usuario/microservice-app-example.git
+git clone https://github.com/davidone007/microservice-app-example
 cd microservice-app-example
 ```
 
