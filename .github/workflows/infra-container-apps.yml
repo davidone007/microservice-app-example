@@ -1,0 +1,53 @@
+name: infra - Terraform Container Apps
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "terraform/container-apps/**"
+      - ".github/workflows/infra-container-apps.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "terraform/container-apps/**"
+      - ".github/workflows/infra-container-apps.yml"
+
+jobs:
+  deploy-container-apps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Create .tfvars file for deployment
+        run: |
+          SUB_ID=$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r .subscriptionId)
+
+          cat > terraform/container-apps/terraform.tfvars <<EOF
+          subscription_id = "$SUB_ID"
+          # 👇 acá metés lo que tu módulo de container-apps realmente necesite
+          acr_name        = "${{ secrets.ACR_NAME }}"
+          key_vault_name  = "msapp-kv-20250920"
+          location        = "centralus"
+          resource_group  = "microservices-rg"
+          EOF
+        shell: bash
+
+      - name: Run Terraform to deploy Container Apps
+        env:
+          ARM_ACCESS_KEY: ${{ secrets.ARM_ACCESS_KEY }}
+        run: |
+          bash ./terraform/scripts/deploy-container-apps.sh terraform/container-apps/terraform.tfvars
+          echo "\n🎉 Despliegue de Container Apps completado. Outputs:\n"
+          terraform output
+        shell: bash

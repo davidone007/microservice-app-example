@@ -1,0 +1,57 @@
+name: Infra - Terraform Backend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "terraform/terraform-backend/**"
+      - ".github/workflows/infra-backend.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "terraform/terraform-backend/**"
+      - ".github/workflows/infra-backend.yml"
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Check if backend already exists
+        id: check-backend
+        run: |
+          set +e
+          # Nombre del grupo de recursos y storage
+          RG_NAME="tfstate-rg-microservices"
+          STORAGE_NAME="tfstatemsapp20250920ac"
+
+          # Verificar si existe el resource group
+          az group show --name $RG_NAME &>/dev/null
+          if [ $? -eq 0 ]; then
+            echo "Resource group $RG_NAME ya existe."
+            # Verificar si existe el storage account
+            az storage account show --name $STORAGE_NAME --resource-group $RG_NAME &>/dev/null
+            if [ $? -eq 0 ]; then
+              echo "Storage account $STORAGE_NAME ya existe. Saltando deploy..."
+              echo "skip=true" >> $GITHUB_ENV
+              exit 0
+            fi
+          fi
+          echo "skip=false" >> $GITHUB_ENV
+
+      - name: Deploy Terraform backend
+        if: env.skip == 'false'
+        run: bash ./terraform/scripts/deploy-backend.sh
+        shell: bash

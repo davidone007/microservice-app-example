@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/sony/gobreaker"
 )
 
 var allowedUserHashes = map[string]interface{}{
@@ -31,6 +32,7 @@ type UserService struct {
 	Client            HTTPDoer
 	UserAPIAddress    string
 	AllowedUserHashes map[string]interface{}
+	Breaker           *gobreaker.CircuitBreaker
 }
 
 func (h *UserService) Login(ctx context.Context, username, password string) (User, error) {
@@ -61,6 +63,37 @@ func (h *UserService) getUser(ctx context.Context, username string) (User, error
 
 	req = req.WithContext(ctx)
 
+	// If a circuit breaker is configured, use it to protect calls to Users API.
+	if h.Breaker != nil {
+		bodyIface, err := h.Breaker.Execute(func() (interface{}, error) {
+			resp, err := h.Client.Do(req)
+			if err != nil {
+				return nil, err
+			}
+			defer resp.Body.Close()
+
+			bodyBytes, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+
+			if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+				return nil, fmt.Errorf("could not get user data: %s", string(bodyBytes))
+			}
+
+			return bodyBytes, nil
+		})
+
+		if err != nil {
+			return user, err
+		}
+
+		bodyBytes := bodyIface.([]byte)
+		err = json.Unmarshal(bodyBytes, &user)
+		return user, err
+	}
+
+	// Fallback: no breaker configured, perform direct HTTP call
 	resp, err := h.Client.Do(req)
 	if err != nil {
 		return user, err
